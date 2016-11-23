@@ -68,38 +68,36 @@ inline static void draw_mesh(const mesh *item){
 	glBindVertexArray(0);
 }
 
-inline static void render_shadow(void){
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadow.fbo);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	draw_mesh(&model);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-}
-
 int display(void){
 	static unsigned int iii = 0;
 
-	//Creating an oblique projection (an orthographic projection that has been sheared):
+	//Create an oblique projection (an orthographic projection that has been sheared) based on azimuth and zenith_distance of satellite:
 	//float azimuth = (M_PI/180) * (iii % 360), zenith_distance = (M_PI/180) * ((iii/360) % 90);//Changes azimuth faster.
 	float azimuth = (M_PI/180) * ((iii/90) % 360), zenith_distance = (M_PI/180) * (iii % 90);//Changes zenith_distance faster.
 	float offs = tan(zenith_distance);//Shearing increases as zenith_distance increases.
 	float xoffs = offs * sin(azimuth);
 	float yoffs = offs * cos(azimuth);
-	mat4x4 raw_shad_mat_mat = {//Column major
+	mat4x4 shearing_matrix = {//Column major
 		{1.0f,  0.0f,  0.0f,  0.0f},
 		{0.0f,  1.0f,  0.0f,  0.0f},
 		{xoffs, yoffs, 1.0f,  0.0f},
 		{0.0f,  0.0f,  0.0f,  1.0f},
 	};
-	mat4x4 shad_mat_mat, ortho_mat;
-	mat4x4_ortho(ortho_mat, -1, 1, -1, 1, -model.zmin/512, -ground.zmax/512);//-1 to 1, not 0 to 1, so 512 rather than 1024.
-	mat4x4_mul(shad_mat_mat, ortho_mat, raw_shad_mat_mat);
+	mat4x4 satellite_view_projection, orthographic_projection;
+	mat4x4_ortho(orthographic_projection, -1, 1, -1, 1, -model.zmin/512, -ground.zmax/512);//-1 to 1, not 0 to 1, so 512 rather than 1024.
+	mat4x4_mul(satellite_view_projection, orthographic_projection, shearing_matrix);
 
-	glUniformMatrix4fv(shad_mat, 1, GL_FALSE, *shad_mat_mat);
-	if(!shadow_view)glUniformMatrix4fv(proj_mat, 1, GL_FALSE, *shad_mat_mat);//Create depth map from satellite's point of view.
-	render_shadow();
+	//Render a depth map in the satellite's view, from the city model (model):
+	glUniformMatrix4fv(shad_mat, 1, GL_FALSE, *satellite_view_projection);
+	if(!shadow_view)glUniformMatrix4fv(proj_mat, 1, GL_FALSE, *satellite_view_projection);//Create depth map from SATELLITE'S point of view.
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadow.fbo);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		draw_mesh(&model);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
+	//Apply depth map to ground model (ground), either as grayscale image or to generate shadows:
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//Clear colour to keep background, clear depth to prevent artefacts in depth map mode.
-	if(!shadow_view)glUniformMatrix4fv(proj_mat, 1, GL_FALSE, *ortho_mat);//Draw shadows from zenith view.
+	if(!shadow_view)glUniformMatrix4fv(proj_mat, 1, GL_FALSE, *orthographic_projection);//Draw shadows from zenith view.
 	draw_mesh(&ground);
 
 	glfwSwapBuffers();
