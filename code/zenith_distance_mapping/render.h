@@ -7,6 +7,4 @@ int display(void);
 
 void renderer_specific_commands(int key);
 
-//void delete_opengl_objects(void);//TODO
-
 #endif//#ifndef RENDER_H

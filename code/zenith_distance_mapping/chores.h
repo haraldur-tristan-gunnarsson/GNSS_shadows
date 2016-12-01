@@ -17,30 +17,24 @@ GLuint init_eab(const GLuint indices[], const GLsizeiptr sizeof_indices);
 GLuint init_vao(const GLuint vbo, const GLuint eab, const GLuint attribute);
 
 typedef struct{//Any independent polyhedron/polygon to draw
-    GLuint vao;
-    GLuint vbo;
-    GLuint eab;
-    GLsizei draw_count;
-    mat4x4 model_mat;
-    float xmin;
-    float xmax;
-    float ymin;
-    float ymax;
-    float zmin;
-    float zmax;
+	GLuint vao;
+	GLuint vbo;
+	GLuint eab;
+	GLsizei draw_count;
+	mat4x4 model_mat;
+	float xmin;
+	float xmax;
+	float ymin;
+	float ymax;
+	float zmin;
+	float zmax;
 } mesh;
-
-mesh init_ground_plane(const GLuint position_attribute);
-
-mesh init_lei_ground_plane(const GLuint position_attribute, int win_x);
-
-mesh init_cube(const GLuint position_attribute);
 
 mesh init_model(const char *const filepath, const GLuint position_attribute, const unsigned int win_x, const unsigned int win_y, float xoffset, float yoffset, const int useoffset);
 
 typedef struct{
-    GLuint fbo;
-    GLuint texture;
+	GLuint fbo;
+	GLuint texture;
 } render_target;
 
 render_target init_fbo(const unsigned int windowX, const unsigned int windowY, const GLenum attachment_point, const GLenum internal_format, const GLenum format);
